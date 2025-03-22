@@ -1,0 +1,8 @@
+<h3 class="step-title">Appointment Type Selection</h3>
+<div class="options-container">
+  {% for term in terms %}
+    <div class="appointment-type-option" data-id="{{ term.id }}">
+      {{ term.name }}
+    </div>
+  {% endfor %}
+</div>

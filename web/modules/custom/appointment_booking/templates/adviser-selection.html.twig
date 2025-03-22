@@ -1,0 +1,9 @@
+<h3 class="step-title">Adviser Selection</h3>
+<div class="options-container">
+  {% for adviser in advisers %}
+    <div class="adviser-option"  data-id="{{ adviser.id }}">
+      {{ adviser.name }}
+    </div>
+  {% endfor %}
+</div>
+

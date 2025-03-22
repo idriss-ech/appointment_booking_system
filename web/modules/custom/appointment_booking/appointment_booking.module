@@ -1,0 +1,111 @@
+<?php
+
+
+
+
+/**
+ * @file
+ * Install file for MODULE_NAME.
+ */
+
+use Drupal\taxonomy\Entity\Term;
+use Drupal\taxonomy\Entity\Vocabulary;
+
+
+/**
+ * Implements hook_theme() to register templates.
+ */
+function appointment_booking_theme($existing, $type, $theme, $path)
+{
+  return [
+    'agency_selection' => [
+      'variables' => ['agencies' => NULL],
+      'template' => 'agency-selection',
+    ],
+    'appointment_type_selection' => [
+      'variables' => ['terms' => NULL],
+      'template' => 'appointment-type-selection',
+    ],
+    'adviser_selection' => [
+      'variables' => ['advisers' => NULL],
+      'template' => 'adviser-selection',
+    ],
+    'appointment_information' => [
+      'variables' => [
+        'date' => '',
+        'start_time' => '',
+        'end_time' => ''
+      ],
+      'template' => 'appointment-information',
+    ],
+    'appointment_confirmation_profile' => [
+      'variables' => [
+        'confirmation_data' => NULL,
+      ],
+      'template' => 'appointment-confirmation-profile',
+    ],
+    'appointment_confirmation_appointment' => [
+      'variables' => [
+        'confirmation_data' => NULL,
+      ],
+      'template' => 'appointment-confirmation-appointment',
+    ],
+    'appointment_success_message' => [
+      'variables' => [
+      ],
+      'template' => 'appointment-success-message',
+    ],
+  ];
+
+}
+
+
+
+/**
+ * Implements hook_install().
+ */
+function appointment_booking_install()
+{
+  // Check if the taxonomy module is enabled.
+  if (\Drupal::moduleHandler()->moduleExists('taxonomy')) {
+    // Create the "Appointment Types" vocabulary.
+    $vocabulary = Vocabulary::create([
+      'vid' => 'appointment_types', // Machine name of the vocabulary.
+      'name' => 'Appointment Types', // Human-readable name.
+      'description' => 'A list of appointment types.', // Optional description.
+    ]);
+    $vocabulary->save();
+
+    // Add terms to the "Appointment Types" vocabulary.
+    $terms = [
+      'Business appointments',
+      'Professional stuff',
+      'Consultation',
+      'Check-up',
+      'Follow-up',
+      'Emergency',
+    ];
+
+    foreach ($terms as $term_name) {
+      $term = Term::create([
+        'vid' => 'appointment_types', // Associate the term with the vocabulary.
+        'name' => $term_name, // Term name.
+      ]);
+      $term->save();
+    }
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function appointment_booking_uninstall()
+{
+  // Delete the "Appointment Types" vocabulary and its terms.
+  $vocabulary = Vocabulary::load('appointment_types');
+  if ($vocabulary) {
+    $vocabulary->delete();
+  }
+}
+
+

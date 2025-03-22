@@ -1,0 +1,29 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+// function appointment_booking_install() {
+//     // Clear the entity type cache to ensure the definitions are up-to-date.
+//     \Drupal::entityTypeManager()->clearCachedDefinitions();
+  
+//     // Trigger schema creation for each entity type.
+//     $entity_types = ['appointment', 'agency', 'adviser'];
+//     foreach ($entity_types as $entity_type) {
+//       $entity_definition = \Drupal::entityTypeManager()->getDefinition($entity_type);
+//       \Drupal::service('entity_type.listener')->onEntityTypeCreate($entity_definition);
+//     }
+//   }
+
+/**
+ * Implements hook_uninstall().
+ */
+// function appointment_booking_uninstall() {
+//     // Drop the tables for each entity type.
+//     $entity_types = ['appointment', 'agency', 'adviser'];
+//     foreach ($entity_types as $entity_type) {
+//       $table = $entity_type;
+//       \Drupal::database()->schema()->dropTable($table);
+//     }
+//   }
+

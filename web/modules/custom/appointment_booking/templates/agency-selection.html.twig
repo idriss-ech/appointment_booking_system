@@ -1,0 +1,9 @@
+<h3 class="step-title">Agency Selection</h3>
+<div class="options-container">
+  {% for agency in agencies %}
+    <div class="agency-option"  data-id="{{ agency.id }}">
+      {{ agency.name }}
+    </div>
+  {% endfor %}
+</div>
+

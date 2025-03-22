@@ -1,0 +1,5 @@
+name: 'Appointment Booking'
+type: module
+description: 'Allows users to book appointments with advisers at agencies.'
+core_version_requirement: ^9 || ^10
+package: 'Custom'

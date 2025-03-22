@@ -1,0 +1,326 @@
+
+.options-container{
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+}
+.agency-option, .appointment-type-option, .adviser-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 200px;
+  height: 150px;
+  cursor: pointer;
+  padding: 10px;
+  margin: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  text-align: center;
+  font-size: large;
+  font-weight: 600;
+}
+
+.agency-option.selected, .appointment-type-option.selected, .adviser-option.selected {
+  background-color: #007bff;
+  color: #fff;
+  font-size: large;
+  font-weight: 600;
+  border-color: #0056b3;
+}
+.agency-option.selected:hover, .appointment-type-option.selected:hover, .adviser-option.selected:hover {
+  background-color: #0e7ff8;
+  
+}
+
+.agency-option:hover, .appointment-type-option:hover, .adviser-option:hover {
+  background-color: #f0f0f0;
+}
+
+.step-title{
+  color:#0056b3;
+}
+
+.form-actions{ 
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.appointment-booking-form .form-submit{
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+.appointment-booking-form .form-submit:hover{
+  background-color: #fff;
+  color: #007bff;
+  border: 1px solid #007bff;
+  
+}
+
+
+/* General Styles */
+.appointment-personal-info-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;  /* Aligning at the start for better responsiveness */
+  gap: 10px;
+  height: auto;  /* Adjusting height to fit content */
+  flex-wrap: wrap;  /* Ensure content wraps on smaller screens */
+}
+
+.appointment-container, .personal-info-container {
+  border: 1px solid #A2A2A2;
+  border-radius: 10px;
+  padding: 15px;
+  box-sizing: border-box;
+  height: 600px;
+}
+
+.appointment-container {
+  width: 30%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: start;
+}
+
+.personal-info-container {
+  width: 60%; 
+ 
+}
+
+/* Title Styles */
+.appointment-container h3, .appointment-container h4 {
+  color: #0056b3;
+  margin-bottom: 10px;
+  font-size: 1.5rem;
+}
+
+.appointment-container h4 {
+  color: #42474b;
+  font-size: 1.2rem;
+  margin-top: 5px;
+}
+
+/* Personal Information Fields */
+.personal-info-container input[type="textfield"], .personal-info-container input[type="email"], .personal-info-container input[type="tel"] {
+  width: 100%;  /* Make inputs stretch across the container */
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  margin: 10px 0;
+}
+
+.personal-info-container input[type="checkbox"] {
+  margin-top: 10px;
+}
+
+/* Checkbox and Description for Terms and Conditions */
+.personal-info-container .description {
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 10px;
+}
+
+.personal-info-container label {
+  font-size: 1rem;
+}
+
+.personal-info-container a {
+  color: #0056b3;
+  text-decoration: none;
+}
+
+.personal-info-container a:hover {
+  text-decoration: underline;
+}
+
+/* Responsiveness */
+@media (max-width: 768px) {
+  .appointment-personal-info-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+  }
+
+  .appointment-container, .personal-info-container {
+    width: 100%; /* Ensure both containers take full width on mobile */
+  }
+}
+
+@media (max-width: 480px) {
+  .appointment-container, .personal-info-container {
+    padding: 15px; /* Reduce padding on smaller screens */
+  }
+}
+
+
+.title1{
+  font-weight: bold;
+  color:#0e7ff8; 
+  font-size: 25px;
+}
+.title2{
+  font-weight: 700;
+  color:#474a4c; 
+  font-size: 20px;
+}
+.title3{
+  font-weight: 400;
+  color:#191a1a; 
+  font-size: 16px;
+}
+
+
+
+ .profil , .appointment{
+  border:1px solid #0e7ff8;
+  border-radius: 10px;
+  padding:10px;
+  margin-top: 10px;
+}
+
+.confirmation h3{
+  color: #007bff;
+}
+
+.profil-header, .appointment-header{
+  display: flex;
+  align-items: center;
+  height: 50px;
+  justify-content: space-between;
+}
+
+.edit-button{
+  padding:10px 20px; 
+  background-color: #0e7ff8;
+  border: none;
+  color: white;
+  font-weight: 600;
+  width: 150px;
+  font-size: 15px;
+  cursor: pointer;
+  transform: all 0.2s;
+  border-radius: 10px;
+}
+
+.edit-button:hover{ 
+  background-color: #ffffff;
+  border: 1px solid #007bff;
+  color: #0056b3;
+  
+}
+.profil-body, .appointment-body{
+  display: flex;
+  justify-content: start;
+  align-items:center ;
+  margin-top: 10px;
+}
+.profil-body div{
+  flex: 1;
+}
+.appointment-body div{
+  flex: 1;
+}
+
+.confirmation span{
+  font-weight: 700;
+  color: black;
+}
+.confirmation p{
+  font-weight: 500;
+  color: gray;
+}
+
+
+/* Style pour les créneaux indisponibles */
+.fc-unavailable {
+  background-color: #ffcccc !important;
+  color: #cc0000 !important;
+  opacity: 0.8;
+}
+
+.appointment-success-message{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  text-align: center;
+}
+.appointment-success-message h2{
+  color: #191a1a;
+  margin:0;
+}
+.appointment-success-message p{
+  font-size: 20px;
+  color: #0e7ff8;
+}
+
+
+/* step 7 */
+
+.button-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 20px; /* Espace entre les boutons */
+}
+.button-container .modify-button {
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.button-container .home-button,.button-container .modify-button {
+  padding: 10px 20px;
+  width: 250px;
+  font-size: 16px;
+  border-radius: 5px;
+  text-decoration: none;
+  text-align: center;
+}
+
+.button-container .modify-button {
+  background-color: #007bff; /* Bleu pour le bouton de modification */
+  color: #fff;
+  border: none;
+}
+
+.button-container .modify-button:hover {
+  background-color: #0056b3;
+  color: white;
+}
+
+.button-container .home-button {
+  background-color: #28a745; /* Vert pour le bouton de retour à l'accueil */
+  color: #fff;
+  border: none;
+}
+
+.button-container .home-button:hover {
+  background-color: #218838; /* Vert plus foncé au survol */
+}
+
+.appointment-booking-form .phone-verification-container {
+  border: 1px solid #007bff;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+}
+
+.appointment-booking-form .phone-verification-container .phone-input{
+  width: 100%;
+}
+.appointment-booking-form .phone-verification-container div:nth-of-type(2) {
+  display: flex;
+  justify-content: end;
+}

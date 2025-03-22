@@ -1,0 +1,20 @@
+global:
+  version: 1.0
+  css:
+    theme:
+      css/global.css: {}
+  js:
+    js/global.js: {}
+  dependencies:
+  - core/jquery
+  - core/drupal
+  - core/once
+
+fullcalendar:
+  version: 5.1
+  js:
+    js/fullcalendar.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - fullcalendar_view/fullcalendar

@@ -1,0 +1,9 @@
+# Route for Booking form 
+appointment_booking.booking_form:
+  path: '/prendre-un-rendez-vous'
+  defaults:
+    _form: '\Drupal\appointment_booking\Form\BookingForm'
+    _title: 'Prendre un Rendez-vous'
+  requirements:
+    _permission: 'access content'
+
