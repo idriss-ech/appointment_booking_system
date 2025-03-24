@@ -2,12 +2,19 @@ services:
   appointment_booking.service:
     class: Drupal\appointment_booking\Service\AppointmentService
     arguments: ['@entity_type.manager']
+
   appointment_booking.agency_service:
     class: Drupal\appointment_booking\Service\AgencyService
     arguments: ['@entity_type.manager']
+
   appointment_booking.adviser_service:
     class: Drupal\appointment_booking\Service\AdviserService
     arguments: ['@entity_type.manager']
+
   appointment_booking.operating_hours_formatter:
     class: 'Drupal\appointment_booking\Service\OperatingHoursFormatter'
     arguments: []
+
+  appointment_booking.export_controller:
+    class: Drupal\appointment_booking\Controller\AppointmentExportController
+    arguments: ['@file_system', '@tempstore.private', '@file_url_generator', '@messenger' ]

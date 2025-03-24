@@ -7,3 +7,18 @@ appointment_booking.booking_form:
   requirements:
     _permission: 'access content'
 
+appointment_booking.export_csv:
+  path: '/admin/structure/appointments/export'
+  defaults:
+    _controller: '\Drupal\appointment_booking\Controller\AppointmentExportController::startExport'
+    _title: 'Export Filtered Appointments'
+  requirements:
+    _permission: 'access appointment overview'
+
+appointment_booking.my_appointments:
+  path: '/mes-rendez-vous'
+  defaults:
+    _title: 'My Appointments'
+    _form: '\Drupal\appointment_booking\Form\MyAppointmentsForm'
+  requirements:
+    _permission: 'access content'

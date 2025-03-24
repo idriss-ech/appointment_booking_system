@@ -9,8 +9,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 200px;
-  height: 150px;
+  flex-direction: column;
+  width: 250px;
+  height: 200px;
   cursor: pointer;
   padding: 10px;
   margin: 5px;
@@ -23,7 +24,7 @@
 
 .agency-option.selected, .appointment-type-option.selected, .adviser-option.selected {
   background-color: #007bff;
-  color: #fff;
+  color: #ffffff;
   font-size: large;
   font-weight: 600;
   border-color: #0056b3;
@@ -323,4 +324,90 @@
 .appointment-booking-form .phone-verification-container div:nth-of-type(2) {
   display: flex;
   justify-content: end;
+}
+
+
+/* appointment filters style */
+.filters-container{
+  display: flex;
+  justify-content: space-between;
+  align-items:center;
+}
+
+.button--export{
+  background-color: #0e7ff8;
+  color: white;
+}
+
+
+/* mes rendez vous */
+
+.search-container{
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  flex-wrap: wrap;
+}
+
+.search-container div:nth-of-type(1){
+  flex:3;
+}
+
+.search-container div:nth-of-type(1) input{
+  width: 100%;
+
+}
+.search-container div:nth-of-type(2){
+ display: flex;
+ flex-wrap: nowrap;
+ flex: 2;
+ justify-content: end;
+ width: fit-content;
+}
+
+
+.appointment-item{
+  border: 1px solid #007bff;
+  border-radius: 10px;
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  padding: 20px;
+  gap: 30px;
+  
+}
+
+.appointment-item h3{
+  color: #0056b3;
+  margin: 0;
+}
+.appointment-item h4{
+  color: #1e1f1f;
+  margin: 0;
+}
+.appointment-item p{
+  margin: 4px;
+}
+.appointment-item .appointment-buttons{
+  display: flex;
+  flex-direction: column;
+}
+
+.appointment-item .appointment-buttons a{
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 8px;
+  cursor: pointer;
+}
+.appointment-item .appointment-buttons a:nth-last-of-type(1){
+  color: red;
+}
+.appointment-item .appointment-buttons a:nth-last-of-type(2){
+  color: green;
+}
+
+.appointment-item .appointment-buttons img{
+  width: 20px;
+
 }

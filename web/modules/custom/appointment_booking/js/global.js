@@ -81,3 +81,18 @@
     }
   };
 })(Drupal, once);
+
+// delete confirmation
+
+(function($, Drupal) {
+  Drupal.behaviors.myAppointments = {
+    attach: function(context, settings) {
+      // Handle delete confirmation dialog
+      $('.button--delete').once('appointment-delete').on('click', function(e) {
+        if (!confirm(Drupal.t('Are you sure you want to delete this appointment?'))) {
+          e.preventDefault();
+        }
+      });
+    }
+  };
+})(jQuery, Drupal);

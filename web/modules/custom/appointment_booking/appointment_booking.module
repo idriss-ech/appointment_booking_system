@@ -55,6 +55,18 @@ function appointment_booking_theme($existing, $type, $theme, $path)
       ],
       'template' => 'appointment-success-message',
     ],
+    'appointment_item' => [
+      'variables' => [
+        'date_string' => NULL,
+        'title' => NULL,
+        'adviser' => NULL,
+        'agency' => NULL,
+        'appointment_type' => NULL,
+        'edit_url' => NULL,
+        'delete_url' => NULL,
+      ],
+      'template' => 'appointment-item',
+    ],
   ];
 
 }

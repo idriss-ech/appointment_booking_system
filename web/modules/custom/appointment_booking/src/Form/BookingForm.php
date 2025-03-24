@@ -61,20 +61,28 @@ class BookingForm extends FormBase {
     $agency = $this->tempStore->get('agency') ?? '';
     $appointment_type = $this->tempStore->get('appointment_type') ?? '';
     $adviser = $this->tempStore->get('adviser') ?? '';
-
     $form['agency'] = [
       '#type' => 'hidden',
       '#default_value' => $agency,
+      '#attributes' => [
+        'id' => ['agency'],  
+      ],
     ];
 
     $form['appointment_type'] = [
       '#type' => 'hidden',
       '#default_value' => $appointment_type,
+      '#attributes' => [
+        'id' => ['appointment_type'], 
+      ],
     ];
 
     $form['adviser'] = [
       '#type' => 'hidden',
       '#default_value' => $adviser,
+      '#attributes' => [
+        'id' => ['adviser'],  
+      ],
     ];
 
     // Step 1: Agency Selection
@@ -372,7 +380,6 @@ class BookingForm extends FormBase {
         '#type' => 'submit',
         '#value' => $this->t('Next'),
         '#submit' => ['::submitForm'],
-        '#limit_validation_errors' => [],
         '#ajax' => [
           'callback' => '::ajaxUpdateStep',
           'wrapper' => 'booking-form-wrapper',
@@ -387,6 +394,7 @@ class BookingForm extends FormBase {
   }
 
   public function validateForm(array &$form, FormStateInterface $form_state) {
+
     $step = $form_state->getValue('step');
 
     switch ($step) {
@@ -435,9 +443,9 @@ class BookingForm extends FormBase {
   }
 
   public function submitForm(array &$form, FormStateInterface $form_state) {
+
     $step = $form_state->getValue('step');
     $this->tempStore->set('step', $step + 1);
-
     $triggering_element = $form_state->getTriggeringElement();
 
     if ($triggering_element['#name'] === 'edit_user_profile') {
@@ -457,6 +465,7 @@ class BookingForm extends FormBase {
   }
 
   protected function saveStepData(FormStateInterface $form_state, $step) {
+
     switch ($step) {
       case 1:
         $this->tempStore->set('agency', $form_state->getValue('agency'));
@@ -558,20 +567,23 @@ class BookingForm extends FormBase {
   }
 
   public function ajaxUpdateStep(array &$form, FormStateInterface $form_state) {
+
     $response = new AjaxResponse();
      
 
     $response->addCommand(new ReplaceCommand('#booking-form-wrapper', $form));
-    return $response;
+    return $form;
   }
 
   public function goBack(array &$form, FormStateInterface $form_state) {
+
     $step = $this->tempStore->get('step') ?? 1;
     $this->tempStore->set('step', $step - 1);
     $form_state->setRebuild();
   }
 
   public function verifyPhoneNumberForModification(array &$form, FormStateInterface $form_state) {
+
     $phone = $form_state->getValue('phone');
     $appointment = $this->appointmentService->findAppointmentByPhone($phone);
 
@@ -586,6 +598,7 @@ class BookingForm extends FormBase {
   }
 
   public function updateUserInformation(array &$form, FormStateInterface $form_state) {
+
     $appointment = $this->tempStore->get('appointment');
 
     if (!$appointment) {
@@ -602,6 +615,7 @@ class BookingForm extends FormBase {
 
     $this->tempStore->delete('appointment');
     $this->tempStore->set('step', 1);
+    
     $form_state->setRebuild();
     $this->messenger()->addMessage($this->t('Your information has been updated.'));
   }

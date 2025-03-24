@@ -128,7 +128,6 @@ class AppointmentService
         $appointments = $this->entityTypeManager
             ->getStorage('appointment')
             ->loadByProperties(['customer_phone' => $phone]);
-
         if (!empty($appointments)) {
             // Return the first matching appointment
             return reset($appointments);
@@ -136,4 +135,15 @@ class AppointmentService
 
         return null;
     }
+
+    public function findAppointmentsByPhone($phone) {
+        if (empty($phone)) {
+          return [];
+        }
+      
+        return $this->entityTypeManager
+          ->getStorage('appointment')
+          ->loadByProperties(['customer_phone' => $phone]);
+      }
+      
 }
