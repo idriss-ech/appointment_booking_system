@@ -192,11 +192,12 @@ Follow-up,"Friday, 28 March 2025 : 09:30 - 11:30",Void,mohamed,pending
 
 ### Translation : 
 Example : 
--- French
+
+#### 🇫🇷 French
 
 <img width="1440" alt="image" src="https://github.com/user-attachments/assets/596b7112-0ca3-4d8f-a0f4-dffa15e2f03f" />
 
--- English
+#### 🇺🇸 English
 <img width="1440" alt="image" src="https://github.com/user-attachments/assets/dd9be74d-4dbf-4067-8026-72f81c0ba4de" />
 
 
