@@ -40,6 +40,11 @@ composer require 'drupal/fullcalendar_view:^5.1'
 ```bash
 composer require 'drupal/office_hours:^1.23'
 ```
+- Symfony mailer
+```bash
+composer require 'drupal/symfony_mailer:^1.4'
+```
+
 
 ### Installation Steps
 
