@@ -302,9 +302,10 @@
 }
 
 .button-container .home-button {
-  background-color: #28a745; /* Vert pour le bouton de retour à l'accueil */
-  color: #fff;
-  border: none;
+  background-color: #28a745 !important; /* Vert pour le bouton de retour à l'accueil */
+  color: #fff !important;
+  border: none !important;
+  margin-left: 20px;
 }
 
 .button-container .home-button:hover {
@@ -410,4 +411,22 @@
 .appointment-item .appointment-buttons img{
   width: 20px;
 
+}
+
+
+/* not found */
+.notfound{
+  text-align: center;
+  font-size: 20px;
+  font-weight: 800;
+  color: #1e1f1f;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  margin: 20px;
+}
+
+.ui-dialog{
+  width: 600px !important;
 }

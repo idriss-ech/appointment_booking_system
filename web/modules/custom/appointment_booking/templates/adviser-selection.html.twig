@@ -1,11 +1,19 @@
 <h3 class="step-title">Adviser Selection</h3>
-<div class="options-container">
-  {% for adviser in advisers %}
-  
-    <div class="adviser-option"  data-id="{{ adviser.id }}">
-      <div><img src="https://img.icons8.com/?size=100&id=teolYYx1yVnL&format=png&color=000000" width="60"/></div>
-      <div>{{ adviser.name }}</div>
-    </div>
-  {% endfor %}
-</div>
 
+{% if advisers|length > 0 %}
+  <div class="options-container">
+    {% for adviser in advisers %}
+      <div class="adviser-option" data-id="{{ adviser.id }}">
+        <div>
+          <img src="https://img.icons8.com/?size=100&id=teolYYx1yVnL&format=png&color=000000" width="60"/>
+        </div>
+        <div>{{ adviser.name }}</div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="notfound">
+     <img src="https://img.icons8.com/?size=100&id=78339&format=png&color=000000" width="80px"/>
+    <p>No advisers found.</p>
+  </div>
+{% endif %}

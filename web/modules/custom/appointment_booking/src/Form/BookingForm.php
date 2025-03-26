@@ -4,6 +4,7 @@ namespace Drupal\appointment_booking\Form;
 
 use DateTime;
 use DateTimeZone;
+use Drupal\appointment_booking\Service\AppointmentMailService;
 use Drupal\appointment_booking\Service\AppointmentService;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
@@ -18,34 +19,50 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * Provides a multi-step booking form.
  */
-class BookingForm extends FormBase {
+class BookingForm extends FormBase
+{
 
   protected $tempStore;
   protected $agencyService;
   protected $adviserService;
   protected $appointmentService;
 
-  public function __construct(PrivateTempStoreFactory $temp_store_factory, AgencyService $agency_service, AdviserService $adviser_service, AppointmentService $appointmentService) {
+  protected AppointmentMailService $mailService;
+
+  public function __construct(
+    PrivateTempStoreFactory $temp_store_factory,
+    AgencyService $agency_service,
+    AdviserService $adviser_service,
+    AppointmentService $appointmentService,
+    AppointmentMailService $mail_service
+  ) {
     $this->tempStore = $temp_store_factory->get('appointment_booking');
     $this->agencyService = $agency_service;
     $this->adviserService = $adviser_service;
     $this->appointmentService = $appointmentService;
+    $this->mailService = $mail_service;
+
   }
 
-  public static function create(ContainerInterface $container) {
+  public static function create(ContainerInterface $container)
+  {
     return new static(
       $container->get('tempstore.private'),
       $container->get('appointment_booking.agency_service'),
       $container->get('appointment_booking.adviser_service'),
-      $container->get('appointment_booking.service')
+      $container->get('appointment_booking.service'),
+      $container->get('appointment_booking.mail_service')
+
     );
   }
 
-  public function getFormId() {
+  public function getFormId()
+  {
     return 'appointment_booking_form';
   }
 
-  public function buildForm(array $form, FormStateInterface $form_state) {
+  public function buildForm(array $form, FormStateInterface $form_state)
+  {
     $step = $this->tempStore->get('step') ?? 1;
 
     $form['#prefix'] = '<div id="booking-form-wrapper">';
@@ -65,7 +82,7 @@ class BookingForm extends FormBase {
       '#type' => 'hidden',
       '#default_value' => $agency,
       '#attributes' => [
-        'id' => ['agency'],  
+        'id' => ['agency'],
       ],
     ];
 
@@ -73,7 +90,7 @@ class BookingForm extends FormBase {
       '#type' => 'hidden',
       '#default_value' => $appointment_type,
       '#attributes' => [
-        'id' => ['appointment_type'], 
+        'id' => ['appointment_type'],
       ],
     ];
 
@@ -81,7 +98,7 @@ class BookingForm extends FormBase {
       '#type' => 'hidden',
       '#default_value' => $adviser,
       '#attributes' => [
-        'id' => ['adviser'],  
+        'id' => ['adviser'],
       ],
     ];
 
@@ -115,6 +132,9 @@ class BookingForm extends FormBase {
       ];
     }
 
+
+
+
     // Step 4: Date and Time Selection
     if ($step === 4) {
       $form['#attached']['library'][] = 'appointment_booking/fullcalendar';
@@ -131,7 +151,7 @@ class BookingForm extends FormBase {
       $form['#attached']['drupalSettings']['userSlotEvent'] = $userSlotEvent;
 
       $adviser_data = $this->adviserService->loadAdviser($adviser);
-      $working_hours = $adviser_data->get('working_hours')->getValue();
+      $working_hours = $adviser_data->get('field_working_hours')->getValue();
       list($business_hours, $unavailable_slots) = $this->prepareWorkingHours($working_hours);
 
       $form['#attached']['drupalSettings']['adviserWorkingHours'] = $business_hours;
@@ -229,6 +249,7 @@ class BookingForm extends FormBase {
     if ($step === 7) {
       $form['success_message'] = [
         '#theme' => 'appointment_success_message',
+
       ];
 
       $form['button_container'] = [
@@ -248,9 +269,9 @@ class BookingForm extends FormBase {
       ];
 
       $form['button_container']['home'] = [
-        '#type' => 'link',
-        '#title' => $this->t('Return to Homepage'),
-        '#url' => \Drupal\Core\Url::fromRoute('<front>'),
+        '#type' => 'submit',
+        '#value' => $this->t('Return to Homepage'),
+        '#submit' => ['::clearTempstoreAndRedirect'],
         '#attributes' => ['class' => ['home-button']],
       ];
     }
@@ -287,6 +308,32 @@ class BookingForm extends FormBase {
           'event' => 'click',
         ],
         '#attributes' => ['class' => ['verify-button']],
+      ];
+    }
+    if ($step == 8.5) {
+      $form['verification'] = [
+        '#type' => 'fieldset',
+        '#title' => $this->t('Phone Verification'),
+      ];
+
+      $form['verification']['code'] = [
+        '#type' => 'textfield',
+        '#title' => $this->t('Verification Code'),
+        '#description' => $this->t('Enter the 6-digit code sent to your email'),
+        '#required' => TRUE,
+      ];
+
+      $form['verification']['submit'] = [
+        '#type' => 'submit',
+        '#value' => $this->t('Verify'),
+        '#submit' => ['::verifyCode'],
+      ];
+
+      $form['verification']['resend'] = [
+        '#type' => 'submit',
+        '#value' => $this->t('Resend Code'),
+        '#submit' => ['::resendVerificationCode'],
+        '#limit_validation_errors' => [],
       ];
     }
 
@@ -393,7 +440,8 @@ class BookingForm extends FormBase {
     return $form;
   }
 
-  public function validateForm(array &$form, FormStateInterface $form_state) {
+  public function validateForm(array &$form, FormStateInterface $form_state)
+  {
 
     $step = $form_state->getValue('step');
 
@@ -441,8 +489,18 @@ class BookingForm extends FormBase {
         break;
     }
   }
+  
+  public function ajaxUpdateStep(array &$form, FormStateInterface $form_state)
+  {
 
-  public function submitForm(array &$form, FormStateInterface $form_state) {
+    $response = new AjaxResponse();
+
+
+    $response->addCommand(new ReplaceCommand('#booking-form-wrapper', $form));
+    return $form;
+  }
+  public function submitForm(array &$form, FormStateInterface $form_state)
+  {
 
     $step = $form_state->getValue('step');
     $this->tempStore->set('step', $step + 1);
@@ -464,7 +522,8 @@ class BookingForm extends FormBase {
     $form_state->setRebuild();
   }
 
-  protected function saveStepData(FormStateInterface $form_state, $step) {
+  protected function saveStepData(FormStateInterface $form_state, $step)
+  {
 
     switch ($step) {
       case 1:
@@ -480,29 +539,29 @@ class BookingForm extends FormBase {
         break;
 
       case 4:
-         // Get the user's time zone from tempStore
-         $userTimeZone = $form_state->getValue('user_timezone'); // e.g., 'Africa/Casablanca'
+        // Get the user's time zone from tempStore
+        $userTimeZone = $form_state->getValue('user_timezone'); // e.g., 'Africa/Casablanca'
 
-         // Create DateTime objects for start and end dates (assuming they are in UTC)
-         $startDate = new DateTime($form_state->getValue('selected_start_date'), new DateTimeZone('UTC'));
-         $endDate = new DateTime($form_state->getValue('selected_end_date'), new DateTimeZone('UTC'));
+        // Create DateTime objects for start and end dates (assuming they are in UTC)
+        $startDate = new DateTime($form_state->getValue('selected_start_date'), new DateTimeZone('UTC'));
+        $endDate = new DateTime($form_state->getValue('selected_end_date'), new DateTimeZone('UTC'));
 
-         // Convert dates to the user's time zone
-         $startDate->setTimezone(new DateTimeZone($userTimeZone));
-         $endDate->setTimezone(new DateTimeZone($userTimeZone));
+        // Convert dates to the user's time zone
+        $startDate->setTimezone(new DateTimeZone($userTimeZone));
+        $endDate->setTimezone(new DateTimeZone($userTimeZone));
 
-         // Format the dates as strings
-         $formattedStartDate = $startDate->format('l, d F Y'); // e.g., "Saturday, 12 April 2025"
-         $formattedStartTime = $startDate->format('H:i'); // e.g., "00:00"
-         $formattedEndTime = $endDate->format('H:i'); // e.g., "01:00"
+        // Format the dates as strings
+        $formattedStartDate = $startDate->format('l, d F Y'); // e.g., "Saturday, 12 April 2025"
+        $formattedStartTime = $startDate->format('H:i'); // e.g., "00:00"
+        $formattedEndTime = $endDate->format('H:i'); // e.g., "01:00"
 
-         $this->tempStore->set('selected_start_date', $form_state->getValue('selected_start_date'));
-         $this->tempStore->set('selected_end_date', $form_state->getValue('selected_end_date'));
-         $this->tempStore->set('user_timezone', $form_state->getValue('user_timezone'));
+        $this->tempStore->set('selected_start_date', $form_state->getValue('selected_start_date'));
+        $this->tempStore->set('selected_end_date', $form_state->getValue('selected_end_date'));
+        $this->tempStore->set('user_timezone', $form_state->getValue('user_timezone'));
 
-         $this->tempStore->set('date', $formattedStartDate);
-         $this->tempStore->set('start_time', $formattedStartTime);
-         $this->tempStore->set('end_time', $formattedEndTime);
+        $this->tempStore->set('date', $formattedStartDate);
+        $this->tempStore->set('start_time', $formattedStartTime);
+        $this->tempStore->set('end_time', $formattedEndTime);
         break;
 
       case 5:
@@ -519,7 +578,8 @@ class BookingForm extends FormBase {
     }
   }
 
-  protected function saveAppointment() {
+  protected function saveAppointment()
+  {
     $agency_id = $this->tempStore->get('agency');
     $appointment_type = $this->tempStore->get('appointment_type');
     $adviser_id = $this->tempStore->get('adviser');
@@ -551,53 +611,95 @@ class BookingForm extends FormBase {
 
     $this->appointmentService->createAppointment($values);
 
-    // Clear tempStore
-    $this->tempStore->delete('agency');
-    $this->tempStore->delete('appointment_type');
-    $this->tempStore->delete('adviser');
-    $this->tempStore->delete('date');
-    $this->tempStore->delete('selected_start_date');
-    $this->tempStore->delete('selected_end_date');
-    $this->tempStore->delete('start_time');
-    $this->tempStore->delete('end_time');
-    $this->tempStore->delete('first_name');
-    $this->tempStore->delete('last_name');
-    $this->tempStore->delete('email');
-    $this->tempStore->delete('phone');
+  
+    $this->mailService->sendConfirmationEmail($values['customer_email'], $values);
+
+    $this->clearTempStore();
+
+    
   }
 
-  public function ajaxUpdateStep(array &$form, FormStateInterface $form_state) {
-
-    $response = new AjaxResponse();
-     
-
-    $response->addCommand(new ReplaceCommand('#booking-form-wrapper', $form));
-    return $form;
+  
+  protected function clearTempStore() {
+    $keys = [
+      'agency', 'appointment_type', 'adviser', 'date',
+      'selected_start_date', 'selected_end_date', 'start_time',
+      'end_time', 'first_name', 'last_name', 'email', 'phone'
+    ];
+    
+    foreach ($keys as $key) {
+      $this->tempStore->delete($key);
+    }
   }
-
-  public function goBack(array &$form, FormStateInterface $form_state) {
-
-    $step = $this->tempStore->get('step') ?? 1;
-    $this->tempStore->set('step', $step - 1);
-    $form_state->setRebuild();
-  }
-
-  public function verifyPhoneNumberForModification(array &$form, FormStateInterface $form_state) {
-
+ 
+  public function verifyPhoneNumberForModification(array &$form, FormStateInterface $form_state)
+  {
     $phone = $form_state->getValue('phone');
     $appointment = $this->appointmentService->findAppointmentByPhone($phone);
 
     if ($appointment) {
+      // Generate verification code (6 digits)
+      $verification_code = mt_rand(100000, 999999);
+
+      // Store code and appointment temporarily
+      $this->tempStore->set('verification_code', $verification_code);
+      $this->tempStore->set('verification_phone', $phone);
       $this->tempStore->set('appointment', $appointment);
-      $this->tempStore->set('step', 9);
+
+      // Send verification email
+      $this->mailService->sendVerificationEmail($appointment->get('customer_email')->value, $verification_code);
+      $this->tempStore->set('verification_time', time());
+
+
+      // Move to verification step instead of step 9
+      $this->tempStore->set('step', 8.5); // Add a verification step
     } else {
       $this->messenger()->addError($this->t('No appointment found with the provided phone number.'));
     }
 
     $form_state->setRebuild();
   }
+ 
 
-  public function updateUserInformation(array &$form, FormStateInterface $form_state) {
+  public function verifyCode(array &$form, FormStateInterface $form_state)
+  {
+    $generated_time = $this->tempStore->get('verification_time');
+    if (time() - $generated_time > 900) { // 15 minutes
+      $this->messenger()->addError($this->t('Verification code has expired. Please request a new one.'));
+      $form_state->setRebuild();
+      return;
+    }
+    $entered_code = $form_state->getValue('code');
+    $stored_code = $this->tempStore->get('verification_code');
+
+    if ($entered_code == $stored_code) {
+      // Verification successful - proceed to step 9
+      $this->tempStore->set('step', 9);
+      $this->messenger()->addStatus($this->t('Phone number verified successfully.'));
+    } else {
+      $this->messenger()->addError($this->t('Invalid verification code. Please try again.'));
+    }
+
+    $form_state->setRebuild();
+  }
+
+  public function resendVerificationCode(array &$form, FormStateInterface $form_state)
+  {
+    $phone = $this->tempStore->get('verification_phone');
+    $appointment = $this->appointmentService->findAppointmentByPhone($phone);
+
+    if ($appointment) {
+      $new_code = mt_rand(100000, 999999);
+      $this->tempStore->set('verification_code', $new_code);
+      $this->mailService->sendVerificationEmail($appointment->get('customer_email')->value, $new_code);
+      $this->messenger()->addStatus($this->t('A new verification code has been sent.'));
+    }
+
+    $form_state->setRebuild();
+  }
+
+  public function updateUserInformation(array &$form, FormStateInterface $form_state)
+  {
 
     $appointment = $this->tempStore->get('appointment');
 
@@ -615,12 +717,13 @@ class BookingForm extends FormBase {
 
     $this->tempStore->delete('appointment');
     $this->tempStore->set('step', 1);
-    
+
     $form_state->setRebuild();
     $this->messenger()->addMessage($this->t('Your information has been updated.'));
   }
 
-  protected function prepareAppointmentData($appointments) {
+  protected function prepareAppointmentData($appointments)
+  {
     $existingAppointments = [];
     foreach ($appointments as $appointment) {
       $appointmentDate = $appointment->get('date')->value;
@@ -654,7 +757,8 @@ class BookingForm extends FormBase {
     return $existingAppointments;
   }
 
-  protected function prepareUserSlotEvent($selectedStartDate, $selectedEndDate) {
+  protected function prepareUserSlotEvent($selectedStartDate, $selectedEndDate)
+  {
     if ($selectedStartDate && $selectedEndDate) {
       return [
         'title' => 'Your appointment',
@@ -667,7 +771,8 @@ class BookingForm extends FormBase {
     return null;
   }
 
-  protected function prepareWorkingHours($working_hours) {
+  protected function prepareWorkingHours($working_hours)
+  {
     $business_hours = [];
     $unavailable_slots = [];
 
@@ -721,7 +826,8 @@ class BookingForm extends FormBase {
     return [$business_hours, $unavailable_slots];
   }
 
-  protected function prepareConfirmationData() {
+  protected function prepareConfirmationData()
+  {
     $agency = $this->tempStore->get('agency');
     $appointment_type = $this->tempStore->get('appointment_type');
     $adviser = $this->tempStore->get('adviser');
@@ -743,7 +849,8 @@ class BookingForm extends FormBase {
     ];
   }
 
-  protected function buildConfirmationSection($confirmation_data) {
+  protected function buildConfirmationSection($confirmation_data)
+  {
     return [
       '#type' => 'container',
       '#attributes' => ['class' => ['confirmation']],
@@ -805,5 +912,23 @@ class BookingForm extends FormBase {
         ],
       ],
     ];
+  }
+
+  public function goBack(array &$form, FormStateInterface $form_state)
+  {
+
+    $step = $this->tempStore->get('step') ?? 1;
+    $this->tempStore->set('step', $step - 1);
+    $form_state->setRebuild();
+  }
+
+
+  public function clearTempstoreAndRedirect(array &$form, FormStateInterface $form_state)
+  {
+    // Clear all tempstore data
+    $this->tempStore->delete('step');
+
+    // Redirect to homepage
+    $form_state->setRedirect('<front>');
   }
 }

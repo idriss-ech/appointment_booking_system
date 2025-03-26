@@ -3,6 +3,7 @@
 namespace Drupal\appointment_booking\Service;
 
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\user\UserInterface;
 
 class AdviserService
 {
@@ -14,102 +15,115 @@ class AdviserService
     }
 
     /**
-     * Get all advisers .
+     * Get all adviser users.
      */
     public function getAllAdvisers()
     {
-        $advisers = $this->entityTypeManager->getStorage('adviser')->loadMultiple();
-        return $advisers;
+        $users = $this->entityTypeManager->getStorage('user')->loadByProperties([
+            'roles' => 'adviser', // Assuming advisers have 'adviser' role
+        ]);
+        return $users;
     }
+
     /**
-     * Get a list of advisers.
+     * Get a list of advisers for select options.
      */
     public function getAdvisers()
     {
-        $advisers = $this->entityTypeManager->getStorage('adviser')->loadMultiple();
+        $advisers = $this->getAllAdvisers();
         $options = [];
         foreach ($advisers as $adviser) {
-            $options[] = ['id' => $adviser->id(), 'name' => $adviser->label()];
-
+            $options[] = [
+                'id' => $adviser->id(), 
+                'name' => $adviser->getDisplayName()
+            ];
         }
         return $options;
     }
 
     /**
-     * Create a new adviser
+     * Get advisers by agency (assuming users have a field_agency reference field)
+     */
+    public function queryAdvisersByAgency($agency_id)
+    {
+        $query = $this->entityTypeManager->getStorage('user')->getQuery()
+            ->condition('status', 1)
+            // ->condition('roles', 'adviser')
+            ->condition('field_agency', $agency_id)
+            ->accessCheck(TRUE);
+
+        $uids = $query->execute();
+        $advisers = $this->entityTypeManager->getStorage('user')->loadMultiple($uids);
+
+        $options = [];
+        foreach ($advisers as $adviser) {
+            $options[] = [
+                'id' => $adviser->id(),
+                'name' => $adviser->getDisplayName()
+            ];
+        }
+
+        return $options;
+    }
+
+    /**
+     * Load a user (adviser) by ID.
+     */
+    public function loadAdviser($uid)
+    {
+       
+        return $this->entityTypeManager
+            ->getStorage('user')
+            ->load($uid);
+    }
+
+    /**
+     * Update a user (adviser).
+     */
+    public function updateAdviser($uid, array $data)
+    {
+        $user = $this->loadAdviser($uid);
+        if ($user instanceof UserInterface) {
+            foreach ($data as $field => $value) {
+                if ($user->hasField($field)) {
+                    $user->set($field, $value);
+                }
+            }
+            $user->save();
+            return $user;
+        }
+        return null;
+    }
+
+    /**
+     * Delete a user (adviser).
+     * Note: Be careful with deleting users as it may affect other content.
+     */
+    public function deleteAdviser($uid)
+    {
+        $user = $this->loadAdviser($uid);
+        if ($user instanceof UserInterface) {
+            $user->delete();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Create a new adviser user.
      */
     public function createAdviser(array $data)
     {
-        $adviser = $this->entityTypeManager
-            ->getStorage('adviser')
+        $user = $this->entityTypeManager
+            ->getStorage('user')
             ->create($data);
-        $adviser->save();
-        return $adviser;
+        
+        // Set default values for adviser
+        $user->enforceIsNew();
+        $user->addRole('adviser'); // Assign adviser role
+        $user->activate(); // Activate the account
+        
+        $user->save();
+        return $user;
     }
-
-    /** 
-     * Load an adviser by ID.
-     */
-    public function loadAdviser($agency_id)
-    {
-        return $this->entityTypeManager
-            ->getStorage('adviser')
-            ->load($agency_id);
-    }
-
-    /**
-     * update an adviser
-     */
-    public function updateAdviser($agency_id, array $data)
-    {
-        $adviser = $this->loadAdviser($agency_id);
-        if ($adviser) {
-            foreach ($adviser as $field => $value) {
-                $adviser->set($field, $value);
-            }
-            $adviser->save();
-        }
-        return $adviser;
-    }
-
-    /**
-     * delete an adviser
-     */
-    public function deleteAdviser($agency_id)
-    {
-        $adviser = $this->loadAdviser($agency_id);
-        if ($adviser) {
-            $adviser->delete();
-        }
-    }
-
-    /**
-     * Query advisers by agency ID.
-     */
-    public function queryAdvisersByAgency($agency_id)
-{
-    // Query advisers by agency ID
-    $query = $this->entityTypeManager
-        ->getStorage('adviser')
-        ->getQuery()
-        ->condition('agency', $agency_id)
-        ->accessCheck(TRUE);
-
-    // Execute the query and get adviser IDs
-    $adviser_ids = $query->execute();
-
-    // Load the advisers and extract ID and name
-    $adviser_data = [];
-    foreach ($adviser_ids as $id) {
-        $adviser = $this->loadAdviser($id);
-        $adviser_data[] = [
-            'id' => $adviser->id(),          // Get the ID
-            'name' => $adviser->label(),   // Get the name
-        ];
-    }
-
-    return $adviser_data;
-}
-
-
 }

@@ -18,3 +18,7 @@ services:
   appointment_booking.export_controller:
     class: Drupal\appointment_booking\Controller\AppointmentExportController
     arguments: ['@file_system', '@tempstore.private', '@file_url_generator', '@messenger' ]
+
+  appointment_booking.mail_service:
+    class: Drupal\appointment_booking\Service\AppointmentMailService
+    arguments: ['@plugin.manager.mail', '@language_manager', '@renderer']

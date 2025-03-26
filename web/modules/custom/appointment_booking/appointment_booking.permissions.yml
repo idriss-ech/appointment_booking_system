@@ -1,0 +1,10 @@
+# In your permissions.yml
+view appointments:
+  title: 'View appointments'
+  description: 'View their own appointments'
+  restrict access: true
+
+make appointments:
+  title: 'Make appointments'
+  description: 'Create new appointments'
+  restrict access: true

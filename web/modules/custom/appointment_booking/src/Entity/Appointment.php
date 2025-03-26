@@ -12,6 +12,13 @@ use Drupal\Core\Field\BaseFieldDefinition;
  * @ContentEntityType(
  *   id = "appointment",
  *   label = @Translation("Appointment"),
+ *   label_collection = @Translation("Appointments"),
+ *   label_singular = @Translation("appointment"),
+ *   label_plural = @Translation("appointments"),
+ *   label_count = @PluralTranslation(
+ *     singular = "@count appointments",
+ *     plural = "@count appointments",
+ *   ),
  *   handlers = {
  *     "view_builder" = "Drupal\Core\Entity\EntityViewBuilder",
  *     "list_builder" = "Drupal\appointment_booking\AppointmentListBuilder",
@@ -40,9 +47,11 @@ use Drupal\Core\Field\BaseFieldDefinition;
  *   },
  * )
  */
-class Appointment extends ContentEntityBase {
+class Appointment extends ContentEntityBase
+{
 
-  public static function baseFieldDefinitions(EntityTypeInterface $entity_type) {
+  public static function baseFieldDefinitions(EntityTypeInterface $entity_type)
+  {
     $fields = parent::baseFieldDefinitions($entity_type);
 
     // Title field.
@@ -61,7 +70,7 @@ class Appointment extends ContentEntityBase {
       ->setDisplayConfigurable('form', TRUE)
       ->setDisplayConfigurable('view', TRUE);
 
-      $fields['date'] = BaseFieldDefinition::create('string')
+    $fields['date'] = BaseFieldDefinition::create('string')
       ->setLabel(t('Date and Time'))
       ->setRequired(TRUE)
       ->setDisplayOptions('form', [
@@ -75,7 +84,7 @@ class Appointment extends ContentEntityBase {
       ])
       ->setDisplayConfigurable('form', TRUE)
       ->setDisplayConfigurable('view', TRUE);
-    
+
 
     // Agency reference field.
     $fields['agency'] = BaseFieldDefinition::create('entity_reference')
@@ -97,7 +106,7 @@ class Appointment extends ContentEntityBase {
     // Adviser reference field.
     $fields['adviser'] = BaseFieldDefinition::create('entity_reference')
       ->setLabel(t('Adviser'))
-      ->setSetting('target_type', 'adviser')
+      ->setSetting('target_type', 'user')
       ->setRequired(TRUE)
       ->setDisplayOptions('form', [
         'type' => 'entity_reference_autocomplete',

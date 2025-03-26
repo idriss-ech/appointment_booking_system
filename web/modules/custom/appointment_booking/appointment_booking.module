@@ -10,6 +10,7 @@
 
 use Drupal\taxonomy\Entity\Term;
 use Drupal\taxonomy\Entity\Vocabulary;
+use Drupal\core\Render\Markup;
 
 
 /**
@@ -67,11 +68,34 @@ function appointment_booking_theme($existing, $type, $theme, $path)
       ],
       'template' => 'appointment-item',
     ],
+    'appointment_confirmation_email' => [
+      'variables' => [
+        'agency_name' => '',
+        'adviser_name' => '',
+        'date_time' => '',
+        'customer_name' => '',
+      ],
+      'template' => 'appointment-confirmation-email',
+    ],
   ];
 
 }
 
-
+/**
+ * Implements hook_mail().
+ */
+function appointment_booking_mail($key, &$message, $params) {
+  switch ($key) {
+    case 'appointment_confirmation':
+      $message['subject'] = $params['subject'];
+      $message['body'][] = Markup::create($params['message']);
+      break;
+    case 'phone_verification':
+      $message['subject'] = $params['subject'];
+      $message['body'] = $params['body'];
+      break;
+  }
+}
 
 /**
  * Implements hook_install().

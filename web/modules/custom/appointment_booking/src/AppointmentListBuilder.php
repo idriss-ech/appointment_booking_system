@@ -2,87 +2,44 @@
 
 namespace Drupal\appointment_booking;
 
-use Drupal\appointment_booking\Service\AdviserService;
-use Drupal\appointment_booking\Service\AgencyService;
-use Drupal\appointment_booking\Service\AppointmentService;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityListBuilder;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\File\FileSystemInterface;
+use Drupal\Core\Form\FormInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\RendererInterface;
+use Drupal\Core\Datetime\DateFormatterInterface;
 use Drupal\Core\Url;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\Core\Datetime\DateFormatterInterface;
-use Drupal\Core\Link;
-use Drupal\Core\Messenger\MessengerInterface;
-use Drupal\Core\Session\AccountInterface;
-use Drupal\Core\Language\LanguageManagerInterface;
+use Drupal\Core\Batch\BatchBuilder;
 
 /**
- * Provides a list controller for the Appointment entity.
+ * Provides a listing of Appointment entities.
  */
-class AppointmentListBuilder extends EntityListBuilder
-{
-    protected $dateFormatter;
-    protected $appointmentService;
-    protected $agencyService;
-    protected $adviserService;
-    protected $messenger;
-    protected $currentUser;
-    protected $languageManager;
+class AppointmentListBuilder extends EntityListBuilder implements FormInterface {
 
-    // Filter properties
-    protected $adviserFilter;
-    protected $dateFilter;
-    protected $typeFilter;
-    protected $agencyFilter;
+  protected $filterValues = [
+    'title' => '',
+    'agency' => '',
+    'type' => '',
+    'adviser' => '',
+  ];
 
-    /**
-     * Constructs a new AppointmentListBuilder object.
-     */
-    public function __construct(
-        EntityTypeInterface $entity_type,
-        EntityStorageInterface $storage,
-        DateFormatterInterface $date_formatter,
-        AppointmentService $appointmentService,
-        AgencyService $agencyService,
-        AdviserService $adviserService,
-        MessengerInterface $messenger,
-        AccountInterface $current_user,
-        LanguageManagerInterface $language_manager
-    ) {
-        parent::__construct($entity_type, $storage);
-        $this->dateFormatter = $date_formatter;
-        $this->appointmentService = $appointmentService;
-        $this->agencyService = $agencyService;
-        $this->adviserService = $adviserService;
-        $this->messenger = $messenger;
-        $this->currentUser = $current_user;
-        $this->languageManager = $language_manager;
-    }
+  public function __construct(EntityTypeInterface $entity_type, EntityStorageInterface $storage) {
+    parent::__construct($entity_type, $storage);
+  }
 
-    /**
-     * {@inheritdoc}
-     */
-    public static function createInstance(ContainerInterface $container, EntityTypeInterface $entity_type)
-    {
-        return new static(
-            $entity_type,
-            $container->get('entity_type.manager')->getStorage($entity_type->id()),
-            $container->get('date.formatter'),
-            $container->get('appointment_booking.service'),
-            $container->get('appointment_booking.agency_service'),
-            $container->get('appointment_booking.adviser_service'),
-            $container->get('messenger'),
-            $container->get('current_user'),
-            $container->get('language_manager')
-        );
-    }
+  public static function createInstance(ContainerInterface $container, EntityTypeInterface $entity_type) {
+    return new static(
+      $entity_type,
+      $container->get('entity_type.manager')->getStorage($entity_type->id()),
+      $container->get('renderer'),
+    );
+  }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function buildHeader()
+  public function buildHeader()
     {
         $header = [
             'title' => $this->t('Title'),
@@ -103,7 +60,6 @@ class AppointmentListBuilder extends EntityListBuilder
     {
         $row['title'] = $entity->label();
         $row['adviser'] = $entity->get('adviser')->entity->label();
-        // $row['date'] = $this->dateFormatter->format($entity->get('date')->value, 'custom', 'l, j F Y : H:i - H:i');
         $row['date'] = $entity->get('date')->value;
         $row['agency'] = $entity->get('agency')->entity->label();
         $row['appointment_type'] = $entity->label();
@@ -112,191 +68,298 @@ class AppointmentListBuilder extends EntityListBuilder
         return $row + parent::buildRow($entity);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function render()
-    {
-        $build['add_button'] = [
-            '#type' => 'link',
-            '#title' => $this->t('Add Appointment'),
-            '#url' => Url::fromRoute('entity.appointment.add_form'),
-            '#attributes' => ['class' => ['button', 'button--primary']],
-        ];
+  public function render(): array {
+    
 
-        $build['filters'] = $this->buildFilters();
-        $build['table'] = parent::render();
-        $build['#attached']['library'][] = 'appointment_booking/global';
+    $build['filter_form'] = \Drupal::formBuilder()->getForm($this);
+    $build['table'] = parent::render();
+    return $build;
+  }
+  
+  public function getFormId(): string {
+    return 'appointment_filter_form';
+  }
 
-        return $build;
+  public function buildForm(array $form, FormStateInterface $form_state): array {
+    $request = \Drupal::request();
+    $this->filterValues = [
+      'title' => $request->query->get('title', ''),
+      'agency' => $request->query->get('agency', ''),
+      'type' => $request->query->get('type', ''),
+      'adviser' => $request->query->get('adviser', ''),
+    ];
+
+    $form['add_appointment'] = [
+      '#type' => 'link',
+      '#title' => $this->t('+ Add Appointment'),
+      '#url' => Url::fromUri('internal:/prendre-un-rendez-vous'),
+      '#attributes' => ['class' => ['button', 'button--primary']],
+    ];
+    $build['add_button'] = [
+      '#type' => 'link',
+      '#title' => $this->t('Add Appointment'),
+      '#attributes' => [
+        'class' => ['button', 'button--primary'],
+      ],
+    ];
+
+    $form['filters'] = [
+      '#type' => 'container',
+      '#attributes' => ['class' => ['form--inline']],
+    ];
+
+    $form['filters']['title'] = [
+      '#type' => 'search',
+      '#title' => $this->t('Filter by Title'),
+      '#default_value' => $this->filterValues['title'],
+      '#size' => 30,
+      '#placeholder' => $this->t('Enter title...'),
+    ];
+
+    $form['filters']['adviser'] = [
+      '#type' => 'search',
+      '#title' => $this->t('Filter by Adviser'),
+      '#default_value' => $this->filterValues['adviser'],
+      '#size' => 30,
+      '#placeholder' => $this->t('Enter adviser name...'),
+    ];
+
+    $agencies = \Drupal::entityTypeManager()->getStorage('agency')->loadMultiple();
+    $agency_options = ['' => $this->t('- Any -')];
+    foreach ($agencies as $agency) {
+      $agency_options[$agency->id()] = $agency->label();
     }
 
-    /**
-     * Build the filters form.
-     */
-    public function buildFilters()
-    {
-        $request = \Drupal::request();
-        $this->adviserFilter = $request->query->get('adviser');
-        $this->dateFilter = $request->query->get('date');
-        $this->typeFilter = $request->query->get('appointment_type');
-        $this->agencyFilter = $request->query->get('agency');
+    $form['filters']['agency'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Filter by Agency'),
+      '#empty_option' => $this->t('All agencies...'),
+      '#options' => $agency_options,
+      '#default_value' => $this->filterValues['agency'],
+    ];
 
-        $filters['wrapper'] = [
-            '#type' => 'container',
-            '#attributes' => ['class' => ['filters-flex-wrapper']],
-        ];
-
-        // Filters container
-        $filters['wrapper']['filters'] = [
-            '#type' => 'container',
-            '#attributes' => ['class' => ['filters-container']],
-        ];
-
-        // Adviser filter with 'All' option
-        $filters['wrapper']['filters']['adviser'] = [
-            '#type' => 'entity_autocomplete',
-            '#title' => $this->t('Adviser'),
-            '#target_type' => 'adviser',
-            '#tags' => TRUE,
-            '#default_value' => NULL,
-            '#selection_handler' => 'default',
-            '#selection_settings' => [
-                'target_bundles' => NULL,
-                'match_operator' => 'CONTAINS',
-            ],
-            '#attributes' => ['class' => ['filter-item']],
-        ];
-
-        // Date filter
-        $filters['wrapper']['filters']['date'] = [
-            '#type' => 'date',
-            '#title' => $this->t('Date'),
-            '#default_value' => $this->dateFilter,
-            '#attributes' => ['class' => ['filter-item']],
-        ];
-
-        $appointmentTypes = $this->appointmentService->getAppointmentTypes();
-        $appointmentTypeOptions = [];
-        foreach ($appointmentTypes as $type) {
-            $appointmentTypeOptions[$type['id']] = $type['name'];
-        }
-
-        $agencies = $this->agencyService->getAgencies();
-        $agenciesOptions = [];
-        foreach ($agencies as $agency) {
-            $agenciesOptions[$agency['id']] = $agency['name'];
-        }
-
-        // Appointment Type filter with 'All' option
-        $filters['wrapper']['filters']['appointment_type'] = [
-            '#type' => 'select',
-            '#title' => $this->t('Appointment Type'),
-            '#options' => $appointmentTypeOptions,
-            '#empty_option' => $this->t('- All -'),
-            '#default_value' => $this->typeFilter,
-            '#attributes' => ['class' => ['filter-item']],
-        ];
-
-        // Agency filter with 'All' option
-        $filters['wrapper']['filters']['agency'] = [
-            '#type' => 'select',
-            '#title' => $this->t('Agency'),
-            '#options' => $agenciesOptions,
-            '#empty_option' => $this->t('- All -'),
-            '#default_value' => $this->agencyFilter,
-            '#attributes' => ['class' => ['filter-item']],
-        ];
-
-        // Actions container
-        $filters['wrapper']['actions'] = [
-            '#type' => 'container',
-            '#attributes' => ['class' => ['actions-container']],
-        ];
-
-        // Apply button
-        $filters['wrapper']['actions']['apply'] = [
-            '#type' => 'submit',
-            '#value' => $this->t('Apply Filters'),
-            '#submit' => ['::applyFilters'],
-            '#attributes' => ['class' => ['button', 'button--primary']],
-        ];
-
-        // Reset button
-        $filters['wrapper']['actions']['reset'] = [
-            '#type' => 'link',
-            '#title' => $this->t('Reset'),
-            '#url' => Url::fromRoute('<current>'),
-            '#attributes' => ['class' => ['button', 'button--secondary']],
-        ];
-
-        // Export button
-        $filters['wrapper']['actions']['export'] = [
-            '#type' => 'link',
-            '#title' => $this->t('Export CSV'),
-            '#url' => Url::fromRoute('appointment_booking.export_csv', [], [
-                'query' => [
-                    'adviser' => $this->adviserFilter,
-                    'date' => $this->dateFilter,
-                    'appointment_type' => $this->typeFilter,
-                    'agency' => $this->agencyFilter,
-                ]
-            ]),
-            '#attributes' => ['class' => ['button', 'button--export']],
-        ];
-
-        return [
-            '#type' => 'container',
-            '#attributes' => ['class' => ['appointment-filters']],
-            '#children' => $filters,
-            '#attached' => [
-                'library' => ['appointment_booking/filters'],
-            ],
-        ];
+    $types = \Drupal::entityTypeManager()
+      ->getStorage('taxonomy_term')
+      ->loadByProperties(['vid' => 'appointment_type']);
+    $type_options = ['' => $this->t('- Any -')];
+    foreach ($types as $type) {
+      $type_options[$type->id()] = $type->label();
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function getEntityIds()
-    {
-        $query = $this->getStorage()->getQuery()
-            ->accessCheck(TRUE)
-            ->sort($this->entityType->getKey('id'));
+    $form['filters']['type'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Filter by Type'),
+      '#options' => $type_options,
+      '#empty_option' => $this->t('All types...'),
+      '#default_value' => $this->filterValues['type'],
+    ];
 
-        // Apply filters
-        if ($this->adviserFilter) {
-            $query->condition('adviser', (array) $this->adviserFilter, 'IN');
-        }
-        if ($this->dateFilter) {
-            $start = strtotime($this->dateFilter);
-            $end = strtotime($this->dateFilter . ' +1 day');
-            $query->condition('date', $start, '>=');
-            $query->condition('date', $end, '<');
-        }
-        if ($this->typeFilter) {
-            $query->condition('appointment_type', $this->typeFilter);
-        }
-        if ($this->agencyFilter) {
-            $query->condition('agency', $this->agencyFilter);
-        }
+    $form['filters']['actions'] = [
+      '#type' => 'actions',
+    ];
 
-        return $query->execute();
+    $form['filters']['actions']['submit'] = [
+      '#type' => 'submit',
+      '#value' => $this->t('Filter'),
+    ];
+
+    $form['filters']['actions']['reset'] = [
+      '#type' => 'submit',
+      '#value' => $this->t('Reset'),
+      '#submit' => ['::resetFilters'],
+      '#limit_validation_errors' => [],
+    ];
+
+    $form['filters']['actions']['export'] = [
+      '#type' => 'submit',
+      '#value' => $this->t('Export to CSV'),
+      '#submit' => ['::exportToCsv'],
+      '#weight' => 100,
+    ];
+
+    return $form;
+  }
+
+  public function validateForm(array &$form, FormStateInterface $form_state) {}
+
+  public function submitForm(array &$form, FormStateInterface $form_state): void {
+    $this->filterValues = [
+      'title' => $form_state->getValue('title'),
+      'agency' => $form_state->getValue('agency'),
+      'type' => $form_state->getValue('type'),
+      'adviser' => $form_state->getValue('adviser'),
+    ];
+
+    $form_state->setRedirect('<current>', [], [
+      'query' => [
+        'title' => $this->filterValues['title'],
+        'agency' => $this->filterValues['agency'],
+        'type' => $this->filterValues['type'],
+        'adviser' => $this->filterValues['adviser'],
+      ],
+    ]);
+  }
+
+  public function resetFilters(array &$form, FormStateInterface $form_state): void {
+    $form_state->setRedirect('<current>');
+  }
+
+  /**
+   * Export to CSV submit handler.
+   */
+  public function exportToCsv(array &$form, FormStateInterface $form_state): void
+  {
+    // Get all entity IDs with current filters (without pager)
+    $query = $this->getStorage()->getQuery()
+      ->accessCheck(TRUE)
+      ->sort($this->entityType->getKey('label'));
+
+    if (!empty($this->filterValues['title'])) {
+      $query->condition('title', $this->filterValues['title'], 'CONTAINS');
+    }
+    if (!empty($this->filterValues['agency'])) {
+      $query->condition('agency', $this->filterValues['agency']);
+    }
+    if (!empty($this->filterValues['type'])) {
+      $query->condition('type', $this->filterValues['type']);
+    }
+    if (!empty($this->filterValues['adviser'])) {
+      $query->condition('adviser.entity.name', $this->filterValues['adviser'], 'CONTAINS');
     }
 
-    /**
-     * Apply filters handler.
-     */
-    public function applyFilters(array &$form, FormStateInterface $form_state)
-    {
-        $values = $form_state->getValues();
-        $query = [
-            'adviser' => $values['adviser'] ?? NULL,
-            'date' => $values['date'] ?? NULL,
-            'appointment_type' => $values['appointment_type'] ?? NULL,
-            'agency' => $values['agency'] ?? NULL,
-        ];
+    $entity_ids = $query->execute();
 
-        $form_state->setRedirect('<current>', [], ['query' => array_filter($query)]);
+    $batch_builder = (new BatchBuilder())
+      ->setTitle($this->t('Exporting appointments'))
+      ->setInitMessage($this->t('Starting export'))
+      ->setProgressMessage($this->t('Processed @current out of @total.'))
+      ->setErrorMessage($this->t('Export has encountered an error.'));
+
+    // Add batch operations
+    $chunks = array_chunk($entity_ids, 100);
+    foreach ($chunks as $chunk) {
+      $batch_builder->addOperation([$this, 'processExportChunk'], [$chunk]);
     }
+
+    // Set finish callback correctly
+    $batch_builder->setFinishCallback([$this, 'finishExport']);
+
+    // Set the batch
+    batch_set($batch_builder->toArray());
+  }
+
+  /**
+   * Process a chunk of entities for export.
+   * @throws \Exception
+   */
+  public function processExportChunk(array $entity_ids, array &$context): void
+  {
+    if (!isset($context['results']['file_path'])) {
+      // Create temporary file for first chunk
+      $directory = 'temporary://exports';
+      \Drupal::service('file_system')->prepareDirectory($directory, FileSystemInterface::CREATE_DIRECTORY);
+      $file_path = $directory . '/appointments_export_' . time() . '.csv';
+      $context['results']['file_path'] = $file_path;
+
+      // Write CSV headers
+      $headers = [
+        'Title', 'Start Date', 'End Date', 'Agency', 'Adviser', 'Status'
+      ];
+      $this->writeCsvLine($file_path, $headers);
+    }
+
+    // Load entities
+    $entities = $this->getStorage()->loadMultiple($entity_ids);
+
+    // Process each entity
+    foreach ($entities as $entity) {
+      $agency_label = $entity->get('agency')->entity ? $entity->get('agency')->entity->label() : '';
+      $adviser_label = $entity->get('adviser')->entity ? $entity->get('adviser')->entity->label() : '';
+
+      $row = [
+        $entity->get('title')->value,
+        $entity->get('date')->value,
+        $agency_label,
+        $adviser_label,
+        $entity->get('status')->value,
+      ];
+
+      $this->writeCsvLine($context['results']['file_path'], $row);
+    }
+
+    $context['message'] = $this->t('Processed @count appointments', ['@count' => count($entities)]);
+  }
+
+  /**
+   * Finish the export process.
+   */
+  public function finishExport($success = false, array $results = [], array $operations = []): void
+  {
+    if ($success && !empty($results['file_path'])) {
+      $file_path = $results['file_path'];
+
+      // Create a downloadable response
+      $response = new \Symfony\Component\HttpFoundation\BinaryFileResponse($file_path);
+      $response->setContentDisposition(
+        \Symfony\Component\HttpFoundation\ResponseHeaderBag::DISPOSITION_ATTACHMENT,
+        'appointments_export_' . date('Y-m-d') . '.csv'
+      );
+
+      // Clean up after download
+      $response->deleteFileAfterSend(true);
+
+      // Set the response
+      \Drupal::service('page_cache_kill_switch')->trigger();
+      $response->send();
+      exit;
+    } else {
+      \Drupal::messenger()->addError($this->t('There was an error exporting the appointments.'));
+    }
+  }
+
+  /**
+   * Helper method to write a line to CSV file.
+   */
+  protected function writeCsvLine(string $file_path, array $data): void
+  {
+    $handle = fopen($file_path, 'a');
+    if ($handle === FALSE) {
+      throw new \Exception("Could not open file: $file_path");
+    }
+
+    // Convert all values to strings and handle empty values
+    $processed_data = array_map(function($item) {
+      return (string) $item;
+    }, $data);
+
+    // Write the CSV line
+    fputcsv($handle, $processed_data);
+    fclose($handle);
+  }
+
+  protected function getEntityIds(): array {
+    $query = $this->getStorage()->getQuery()
+      ->accessCheck(TRUE)
+      ->sort($this->entityType->getKey('label'));
+
+    if (!empty($this->filterValues['title'])) {
+      $query->condition('title', $this->filterValues['title'], 'CONTAINS');
+    }
+    if (!empty($this->filterValues['agency'])) {
+      $query->condition('agency', $this->filterValues['agency']);
+    }
+    if (!empty($this->filterValues['type'])) {
+      $query->condition('type', $this->filterValues['type']);
+    }
+    if (!empty($this->filterValues['adviser'])) {
+      $query->condition('adviser.entity.name', $this->filterValues['adviser'], 'CONTAINS');
+    }
+
+    $query->pager(50);
+
+    return $query->execute();
+  }
 }
+
+
+
