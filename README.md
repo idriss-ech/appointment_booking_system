@@ -182,7 +182,7 @@ Follow-up,"Friday, 28 March 2025 : 09:30 - 11:30",Void,mohamed,pending
 11. **Verify if the user is the owner of the phone number**.
 
 <img width="1439" alt="image" src="https://github.com/user-attachments/assets/2331b2cb-7f41-4536-b175-644703419972" />
-<img width="1440" alt="image" src="https://github.com/user-attachments/assets/f2381d17-5fc9-4ee8-bf07-3956d60e0d13" />
+<img width="1440" alt="image" src="https://github.com/user-attachments/assets/717b6945-74ef-470c-b9ca-b9c2cd4e7297" />
 <img width="1440" alt="image" src="https://github.com/user-attachments/assets/70d14210-9843-4d08-851b-061e185520f2" />
 
 12. **Update Notification**
@@ -190,15 +190,19 @@ Follow-up,"Friday, 28 March 2025 : 09:30 - 11:30",Void,mohamed,pending
 <img width="1440" alt="image" src="https://github.com/user-attachments/assets/b35dc918-e428-4ab8-b905-dddf4aae7a3a" />
 
 
+### Translation : 
+Example : 
+-- French
 
+<img width="1440" alt="image" src="https://github.com/user-attachments/assets/596b7112-0ca3-4d8f-a0f4-dffa15e2f03f" />
 
-
+-- English
+<img width="1440" alt="image" src="https://github.com/user-attachments/assets/dd9be74d-4dbf-4067-8026-72f81c0ba4de" />
 
 
 
 ### Security Measures
 
-- **CSRF Protection**: Implemented in forms.
 - **Input Validation**: Sanitization applied to user input.
 
 <img width="1425" alt="image" src="https://github.com/user-attachments/assets/457d5e47-7512-4548-8056-7a5ba35eb67b" />
