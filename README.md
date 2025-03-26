@@ -1,10 +1,11 @@
-
+<img src="https://github.com/user-attachments/assets/86800886-85b5-4b54-9244-d2b4b1f3f063" width="200px"/>
 ![image](https://github.com/user-attachments/assets/7718ece9-b303-4b4a-9049-13a1aba81099)
 [![Drupal](https://img.shields.io/badge/Drupal-10+-%230678BE?logo=drupal)](https://www.drupal.org)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-Yes-green.svg)](https://github.com/your-org/appointment-booking-system/graphs/commit-activity)
 [![PHP](https://img.shields.io/badge/PHP-8.3+-%23777BB4?logo=php)](https://php.net/)
 
 <hr>
+
 
 # Appointment Booking System - Drupal Module
 
