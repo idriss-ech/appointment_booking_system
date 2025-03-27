@@ -1,0 +1,9 @@
+diff --git a/modules/contrib/colorapi/config/install/colorapi.settings.yml b/modules/contrib/colorapi/config/install/colorapi.settings.yml
+index 8d494604f..b77a6be69 100644
+--- a/modules/contrib/colorapi/config/install/colorapi.settings.yml
++++ b/modules/contrib/colorapi/config/install/colorapi.settings.yml
+@@ -1,2 +1,2 @@
+-enable_color_field: false
++enable_color_field: true
+-enable_color_entity: false
++enable_color_entity: true
